@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Lizzy's Terminal</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: #1a1a1a;
+      color: #ff69b4;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 16px;
+      overflow-x: hidden;
+      transition: background-color 1s;
+    }
+
+    body.sad {
+      background-color: #0e0e2e;
+      color: #aaccff;
+    }
+
+    .terminal {
+      max-width: 800px;
+      margin: auto;
+      white-space: pre-wrap;
+      transition: transform 2s;
+      position: relative;
+    }
+
+    .prompt {
+      color: inherit;
+    }
+
+    .input-line {
+      display: flex;
+    }
+
+    .input-line::before {
+      content: "➜";
+      margin-right: 10px;
+      color: inherit;
+    }
+
+    input {
+      background: transparent;
+      border: none;
+      color: inherit;
+      outline: none;
+      font-family: inherit;
+      font-size: inherit;
+      width: 100%;
+    }
+
+    .blinking-cursor {
+      animation: blink 1s step-start infinite;
+      color: inherit;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    @keyframes spin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(720deg); }
+    }
+
+    .spin {
+      animation: spin 2s ease-in-out;
+    }
+
+    /* 💧 Tear animation */
+    .tear {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      font-size: 20px;
+      animation: fall 2s linear infinite;
+      opacity: 0.7;
+    }
+
+    @keyframes fall {
+      0% {
+        transform: translateX(-50%) translateY(0);
+        opacity: 0.8;
+      }
+      100% {
+        transform: translateX(-50%) translateY(400px);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="terminal" id="terminal">
+    <div class="prompt">lizzy's terminal</div>
+    <div class="prompt">Type <code>iloveyou</code> ...</div>
+    <br>
+  </div>
+
+  <script>
+    const terminal = document.getElementById('terminal');
+    let awaitingLoveResponse = false;
+    let loveRejectionStage = 0;
+    let crying = false;
+
+    const rejectionPrompts = [
+      'are you sure? [Y/N]',
+      'really really really sure? :( [Y/N]',
+      "that's so rude, are you sure you really don't love me? [Y/N]",
+      "okay look, do you at least LIKE me? [Y/N]",
+      "fine! :("
+    ];
+
+    function createInputLine() {
+      const inputLine = document.createElement('div');
+      inputLine.className = 'input-line';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.autofocus = true;
+      input.placeholder = awaitingLoveResponse ? '[Y/N]' : 'Type a command...';
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          const commandText = input.value.trim();
+          if (awaitingLoveResponse) {
+            handleLoveResponse(commandText.toLowerCase());
+          } else {
+            runCommand(commandText);
+          }
+        }
+      });
+
+      inputLine.appendChild(input);
+      terminal.appendChild(inputLine);
+      input.focus();
+      scrollToBottom();
+    }
+
+    function runCommand(input) {
+      const [cmd, ...args] = input.split(' ');
+
+      const commandDisplay = document.createElement('div');
+      commandDisplay.className = 'prompt';
+      commandDisplay.textContent = `➜ ${input}`;
+      terminal.appendChild(commandDisplay);
+
+      if (cmd === 'iloveyou') {
+        const lovePrompt = document.createElement('div');
+        lovePrompt.textContent = 'really? [Y/N]';
+        terminal.appendChild(lovePrompt);
+        awaitingLoveResponse = true;
+        loveRejectionStage = 0;
+      } else if (cmd === 'sorry') {
+        if (crying) {
+          forgiveAndRecover();
+        } else {
+          const nope = document.createElement('div');
+          nope.textContent = "It's okay, I'll forgive you ! ❤️❤️";
+          terminal.appendChild(nope);
+          createInputLine();
+        }
+      } else if (cmd === 'clear') {
+        terminal.innerHTML = '';
+        awaitingLoveResponse = false;
+        loveRejectionStage = 0;
+
+        const header = document.createElement('div');
+        header.className = 'prompt';
+        header.textContent = "lizzy's terminal";
+        terminal.appendChild(header);
+
+        const hint = document.createElement('div');
+        hint.className = 'prompt';
+        hint.textContent = 'not that i wanna spoil anything; please say iloveyou!';
+        terminal.appendChild(hint);
+
+        terminal.appendChild(document.createElement('br'));
+        createInputLine();
+        return;
+      } else {
+        const errorDisplay = document.createElement('div');
+        errorDisplay.textContent = `Command not found: ${cmd}`;
+        terminal.appendChild(errorDisplay);
+      }
+
+      createInputLine();
+    }
+
+    function handleLoveResponse(response) {
+      const responseDisplay = document.createElement('div');
+      responseDisplay.className = 'prompt';
+      responseDisplay.textContent = `➜ ${response.toUpperCase()}`;
+      terminal.appendChild(responseDisplay);
+
+      if (response === 'y') {
+        const loveReply = document.createElement('div');
+        loveReply.textContent = 'I love you too!!!! 💖';
+        terminal.appendChild(loveReply);
+        terminal.classList.add('spin');
+        setTimeout(() => terminal.classList.remove('spin'), 2000);
+        awaitingLoveResponse = false;
+        loveRejectionStage = 0;
+        stopCrying();
+        createInputLine();
+        return;
+      }
+
+      if (response === 'n') {
+        if (loveRejectionStage < rejectionPrompts.length - 1) {
+          const nextPrompt = document.createElement('div');
+          nextPrompt.textContent = rejectionPrompts[loveRejectionStage];
+          terminal.appendChild(nextPrompt);
+          loveRejectionStage++;
+          createInputLine();
+        } else {
+          const final = document.createElement('div');
+          final.textContent = rejectionPrompts[loveRejectionStage]; // "fine! :("
+          terminal.appendChild(final);
+          startCrying();
+          awaitingLoveResponse = false;
+          loveRejectionStage = 0;
+          createInputLine();
+        }
+        scrollToBottom();
+        return;
+      }
+
+      const invalid = document.createElement('div');
+      invalid.textContent = 'Please enter Y or N';
+      terminal.appendChild(invalid);
+      createInputLine();
+    }
+
+    function scrollToBottom() {
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    // 😢 Crying effect
+    function startCrying() {
+      crying = true;
+      document.body.classList.add('sad');
+      for (let i = 0; i < 5; i++) {
+        const tear = document.createElement('div');
+        tear.className = 'tear';
+        tear.style.left = `${20 + Math.random() * 60}%`;
+        tear.textContent = '💧';
+        terminal.appendChild(tear);
+
+        // Remove after falling
+        setTimeout(() => {
+          terminal.removeChild(tear);
+        }, 3000 + Math.random() * 1000);
+      }
+    }
+
+    function stopCrying() {
+      crying = false;
+      document.body.classList.remove('sad');
+    }
+
+    // 🫶 Forgiveness
+    function forgiveAndRecover() {
+      stopCrying();
+
+      const forgiven = document.createElement('div');
+      forgiven.textContent = "That's okay… I forgive you 💕";
+      terminal.appendChild(forgiven);
+      terminal.classList.add('spin');
+      setTimeout(() => terminal.classList.remove('spin'), 2000);
+      createInputLine();
+    }
+
+    // Start terminal
+    createInputLine();
+  </script>
+</body>
+</html>
